@@ -19,13 +19,28 @@ repositories {
 }
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	// Spring Boot WebFlux for reactive REST APIs
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// Spring Data R2DBC for reactive database interactions
+	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+
+	// H2 Database R2DBC Driver for in-memory database
+	implementation 'io.r2dbc:r2dbc-h2'
+
+	// Lombok for reducing boilerplate code
+	implementation 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// Jackson for JSON processing (typically included with Spring Boot WebFlux)
 	implementation 'com.fasterxml.jackson.core:jackson-databind'
-	runtimeOnly 'com.h2database:h2'
+
+	// Reactor Test for testing reactive streams
+	testImplementation 'io.projectreactor:reactor-test'
+
+	// Spring Boot Test Starter for testing Spring Boot applications
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	testImplementation 'com.h2database:h2'
+	testImplementation 'org.springframework.boot:spring-boot-starter-data-jdbc' // For database testing support
 }
 
 tasks.named('test') {
