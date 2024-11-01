@@ -1,6 +1,7 @@
 package com.example.check_weather_api.service;
 
 import com.example.check_weather_api.configuration.ApiKeyConfig;
+import com.example.check_weather_api.exception.ApiErrorHandler;
 import com.example.check_weather_api.exception.InvalidApiKeyException;
 import com.example.check_weather_api.exception.RateLimitExceededException;
 import com.example.check_weather_api.model.CheckWeatherData;
@@ -29,16 +30,23 @@ public class CheckWeatherService {
     private static final Logger logger = LoggerFactory.getLogger(CheckWeatherService.class);
 
     private final List<String> validApiKeys;
+
+    private final ApiErrorHandler apiErrorHandler;
+
     @Value("${openweathermap.base.url}")
     private String baseUrl;
 
     private final Map<String, RateLimit> rateLimitMap = new ConcurrentHashMap<>();
 
     @Autowired
-    public CheckWeatherService(WebClient.Builder webClientBuilder, CheckWeatherRepository weatherRepository, ApiKeyConfig apiKeyConfig) {
+    public CheckWeatherService(WebClient.Builder webClientBuilder,
+                               CheckWeatherRepository weatherRepository,
+                               ApiKeyConfig apiKeyConfig,
+                               ApiErrorHandler apiErrorHandler) {
         this.webClient = webClientBuilder.baseUrl("http://api.openweathermap.org/data/2.5/weather").build();
         this.weatherRepository = weatherRepository;
         this.validApiKeys = apiKeyConfig.getKeys();
+        this.apiErrorHandler = apiErrorHandler;
     }
 
     @Cacheable(cacheNames = "weather", key = "#city + ',' + #country")
@@ -49,10 +57,10 @@ public class CheckWeatherService {
         // Check the database asynchronously for cached data
         return weatherRepository.findByCityAndCountry(city, country)
                 .flatMap(data -> Mono.just(data.getDescription()))  // Return description if data exists
-                .switchIfEmpty(fetchAndCacheWeather(city, country, clientApiKey));  // Fetch from API if not cached
+                .switchIfEmpty(fetchAndCacheWeatherData(city, country, clientApiKey));  // Fetch from API if not cached
     }
 
-    private Mono<String> fetchAndCacheWeather(String city, String country, String clientApiKey) {
+    private Mono<String> fetchAndCacheWeatherData(String city, String country, String clientApiKey) {
         String uri = String.format("?q=%s,%s&appid=%s", city, country, clientApiKey);
 
         // Asynchronously fetch weather data from the downstream API
@@ -67,14 +75,10 @@ public class CheckWeatherService {
                             .map(CheckWeatherResponse.Weather::getDescription)
                             .orElse("No description available");
 
-                    // Cache the description asynchronously in H2
+                    // Save the description asynchronously in H2
                     return saveWeatherData(city, country, description).thenReturn(description);
                 })
-                .onErrorResume(e -> {
-                    String errorMsg = String.format("Failed to fetch weather data for city: %s, country: %s. Reason: %s", city, country, e.getMessage());
-                    logger.error(errorMsg, e);
-                    return Mono.just("Error fetching weather data due to connection issues or invalid parameters.");
-                });
+                .onErrorResume(e -> apiErrorHandler.handleApiError(e, city, country));
     }
 
     private Mono<Void> saveWeatherData(String city, String country, String description) {
@@ -87,8 +91,14 @@ public class CheckWeatherService {
 
 
     private void validateApiKey(String clientApiKey) {
-        // Ensure the API key is present in the rate limit map
+        // Ensure the API key is present in the Valid API key list
+        if (clientApiKey == null || clientApiKey.isEmpty()) {
+            logger.warn("Missing API key in request.");
+            throw new InvalidApiKeyException("Missing API key.");
+        }
+
         if (!validApiKeys.contains(clientApiKey)) {
+            logger.warn("Invalid API key: {}", clientApiKey);
             throw new InvalidApiKeyException("Invalid API key.");
         }
         // Initialize if absent
@@ -107,6 +117,7 @@ public class CheckWeatherService {
 
         // Increment and check request count
         if (rateLimit.getRequestCount().incrementAndGet() > 5) {
+            logger.warn("API key has exceeded its hourly request limit.");
             throw new RateLimitExceededException("Hourly rate limit exceeded for this API key.");
         }
     }
