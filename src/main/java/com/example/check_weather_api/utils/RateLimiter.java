@@ -44,7 +44,7 @@ public class RateLimiter {
         }
 
         // Increment and check request count
-        if (rateLimit.getRequestCount().incrementAndGet() > 6) {
+        if (rateLimit.getRequestCount().incrementAndGet() > 5) {
             throw new RateLimitExceededException("Hourly rate limit exceeded for this API key.");
         }
     }

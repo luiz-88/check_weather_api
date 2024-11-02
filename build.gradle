@@ -19,14 +19,11 @@ repositories {
 }
 
 dependencies {
-	// Spring Boot WebFlux for reactive REST APIs
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
-
-	// Spring Data R2DBC for reactive database interactions
+	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
-
-	// H2 Database R2DBC Driver for in-memory database
 	implementation 'io.r2dbc:r2dbc-h2'
+	implementation 'org.springframework.boot:spring-boot-starter-webflux' // If you're using WebFlux
+	implementation 'io.projectreactor.netty:reactor-netty' // Reactor Netty for reactive programming
 
 	// Lombok for reducing boilerplate code
 	implementation 'org.projectlombok:lombok'
@@ -40,7 +37,7 @@ dependencies {
 
 	// Spring Boot Test Starter for testing Spring Boot applications
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.boot:spring-boot-starter-data-jdbc' // For database testing support
+	testImplementation 'io.projectreactor:reactor-test'
 }
 
 tasks.named('test') {

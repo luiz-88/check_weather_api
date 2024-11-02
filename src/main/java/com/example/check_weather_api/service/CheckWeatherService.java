@@ -28,18 +28,15 @@ public class CheckWeatherService {
 
     private final ApiErrorHandler apiErrorHandler;
 
-    @Value("${openweathermap.base.url}")
-    private String baseUrl;
-
-
 
     @Autowired
     public CheckWeatherService(WebClient.Builder webClientBuilder,
                                CheckWeatherRepository weatherRepository,
                                ApiErrorHandler apiErrorHandler,
                                ApiKeyValidator apiKeyValidator,
-                               RateLimiter rateLimiter) {
-        this.webClient = webClientBuilder.baseUrl("http://api.openweathermap.org/data/2.5/weather").build();
+                               RateLimiter rateLimiter,
+                                @Value("${openweathermap.base.url}") String baseUrl){
+        this.webClient = webClientBuilder.baseUrl(baseUrl).build();
         this.weatherRepository = weatherRepository;
         this.apiKeyValidator = apiKeyValidator;
         this.rateLimiter = rateLimiter;
