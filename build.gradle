@@ -22,8 +22,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
 	implementation 'io.r2dbc:r2dbc-h2'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux' // If you're using WebFlux
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	implementation 'io.projectreactor.netty:reactor-netty' // Reactor Netty for reactive programming
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
 
 	// Lombok for reducing boilerplate code
 	implementation 'org.projectlombok:lombok'

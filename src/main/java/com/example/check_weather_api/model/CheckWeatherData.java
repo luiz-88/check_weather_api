@@ -1,6 +1,7 @@
 package com.example.check_weather_api.model;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
@@ -15,6 +16,7 @@ public class CheckWeatherData {
     private Long id;
 
     // Getter and Setter for city
+    @NonNull
     @Column("city")
     private String city;
 
