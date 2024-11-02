@@ -3,10 +3,11 @@ package com.example.check_weather_api.exception;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
-
+@Component
 public class ApiErrorHandler {
     private static final Logger logger = LoggerFactory.getLogger(ApiErrorHandler.class);
 
