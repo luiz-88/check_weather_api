@@ -46,11 +46,6 @@ public class CheckWeatherService {
         this.apiErrorHandler = apiErrorHandler;
 
     }
-    public Mono<String> validatedWeatherRequest(String city, String country, String clientApiKey) {
-        apiKeyValidator.validate(clientApiKey);
-        rateLimiter.enforceRateLimit(clientApiKey);
-        return getWeatherDescription(city, country, clientApiKey);  // Calls the cacheable method
-    }
 
     @Cacheable(cacheNames = "weather", key = "#city + ',' + #country ")
     public Mono<String> getWeatherDescription(String city, String country, String clientApiKey) {

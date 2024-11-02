@@ -46,18 +46,22 @@ public class CheckWeatherController {
             @RequestParam String country,
             @RequestParam String apiKey) {
 
-        return checkWeatherService.validatedWeatherRequest(city, country, apiKey)
-                .map(ResponseEntity::ok)
-                .onErrorResume(e -> {
-                    if (e instanceof InvalidApiKeyException) {
-                        return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                                .body("Error: Invalid API key provided."));
-                    } else if (e instanceof RateLimitExceededException) {
-                        return Mono.just(ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
-                                .body("Error: API rate limit exceeded."));
-                    }
-                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                            .body("Error: Something went wrong."));
-                });
+        try {
+            // Validate the API key and enforce the rate limit outside the cacheable method
+            apiKeyValidator.validate(apiKey);
+            rateLimiter.enforceRateLimit(apiKey);
+
+            // Call the cacheable service method if the API key is valid
+            return checkWeatherService.getWeatherDescription(city, country, apiKey)
+                    .map(ResponseEntity::ok);
+        } catch (InvalidApiKeyException e) {
+            logger.warn("Invalid API key: {}", apiKey);
+            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Error: Invalid API key provided. Please check your API key and try again."));
+        } catch (RateLimitExceededException e) {
+            logger.warn("Rate limit exceeded: {}", e.getMessage());
+            return Mono.just(ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                    .body("Error: API rate limit exceeded. Please try again later."));
+        }
     }
 }

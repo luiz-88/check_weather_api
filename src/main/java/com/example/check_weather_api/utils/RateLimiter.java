@@ -37,14 +37,14 @@ public class RateLimiter {
         LocalDateTime now = LocalDateTime.now();
         Duration durationSinceFirstRequest = Duration.between(rateLimit.getFirstRequestTime(), now);
 
-        // Reset the rate limit if more than an hour has passed
-        if (durationSinceFirstRequest.toHours() >= 1) {
+        // Reset the rate limit if more than an hour has passed - Change to mill sec
+        if (durationSinceFirstRequest.toMillis() >= 3600000) {
             rateLimit.reset();
         }
 
         // Increment and check request count
-        if (rateLimit.getRequestCount().incrementAndGet() > 5) {
-//            logger.warn("API key has exceeded its hourly request limit.");
+        if (rateLimit.getRequestCount().incrementAndGet() > 6) {
+//            logger.warn("API key has exceeded its houly request limit.");
             throw new RateLimitExceededException("Hourly rate limit exceeded for this API key.");
         }
     }
