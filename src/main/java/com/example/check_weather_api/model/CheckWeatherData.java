@@ -12,7 +12,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 @Table("check_weather_data")
 public class CheckWeatherData {
-
     @Id
     private Long id;
 

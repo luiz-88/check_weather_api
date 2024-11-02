@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 @Component
 public class ApiErrorHandler {
@@ -13,21 +12,23 @@ public class ApiErrorHandler {
 
     public Mono<String> handleApiError(Throwable error, String city, String country) {
         if (error instanceof WebClientResponseException webEx) {
-            HttpStatus status = HttpStatus.resolve(webEx.getStatusCode().value());
-            if (status == null) {
-                status = HttpStatus.INTERNAL_SERVER_ERROR;
+            HttpStatus status = HttpStatus.resolve(webEx.getStatusCode().value()); // Convert HttpStatusCode to HttpStatus
+
+            if (status != null) {
+                logger.error("Error occurred during API call to OpenWeatherMap for city: {}, country: {} - Status: {}, Message: {}",
+                        city, country, status, webEx.getMessage());
+
+                // Return response based on status code
+                if (status.is4xxClientError()) {
+                    return Mono.just("Client error: Please verify request parameters.");
+                } else if (status.is5xxServerError()) {
+                    return Mono.just("Server error: Please try again later.");
+                }
             }
-            String errorMessage = status.is4xxClientError() ? "Invalid parameters provided" : "Error fetching weather data";
-
-            logger.error("Failed to fetch weather data for city: {}, country: {}. Status code: {}, Reason: {}",
-                    city, country, status, webEx.getMessage());
-
-            return Mono.error(new ResponseStatusException(status, errorMessage));
         }
-
-        logger.error("Unexpected error occurred while fetching weather data for city: {}, country: {}. Reason: {}",
-                city, country, error.getMessage());
-        return Mono.error(new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error occurred"));
+        // Default to 500 if unknown error
+        logger.error("Unknown error occurred for city: {}, country: {}", city, country, error);
+        return Mono.just("Internal error occurred.");
     }
 }
 
